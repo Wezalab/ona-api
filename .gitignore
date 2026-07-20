@@ -1,0 +1,21 @@
+# Dependencies
+/node_modules
+
+# Build output
+/dist
+/coverage
+*.tsbuildinfo
+
+# Secrets / local env (never commit private keys)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs
+
+# OS / editor
+.DS_Store
+.idea
+.vscode
