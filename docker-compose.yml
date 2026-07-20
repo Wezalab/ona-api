@@ -1,0 +1,36 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MONGODB_URI: mongodb://mongo:27017/ona
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-access-secret}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-refresh-secret}
+      STARKNET_RPC_URL: ${STARKNET_RPC_URL:-https://api.cartridge.gg/x/starknet/sepolia}
+      STARKNET_CONTRACT_ADDRESS: ${STARKNET_CONTRACT_ADDRESS}
+      STARKNET_OWNER_ADDRESS: ${STARKNET_OWNER_ADDRESS}
+      STARKNET_OWNER_PRIVATE_KEY: ${STARKNET_OWNER_PRIVATE_KEY}
+      BLOCKCHAIN_ENABLED: ${BLOCKCHAIN_ENABLED:-false}
+
+volumes:
+  mongo-data:
