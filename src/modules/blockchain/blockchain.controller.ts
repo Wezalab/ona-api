@@ -1,6 +1,7 @@
-import { Controller, Get, Param } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Param, Post } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { StarknetService } from './starknet.service';
+import { AnchorService } from '../screenings/anchor.service';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '../../common/enums/role.enum';
 
@@ -8,7 +9,10 @@ import { Role } from '../../common/enums/role.enum';
 @ApiBearerAuth()
 @Controller('blockchain')
 export class BlockchainController {
-  constructor(private readonly starknet: StarknetService) {}
+  constructor(
+    private readonly starknet: StarknetService,
+    private readonly anchor: AnchorService,
+  ) {}
 
   @Roles(Role.Admin, Role.Supervisor)
   @Get('status')
@@ -20,5 +24,17 @@ export class BlockchainController {
   @Get('tx/:hash')
   txStatus(@Param('hash') hash: string) {
     return this.starknet.getTransactionStatus(hash);
+  }
+
+  @Roles(Role.Admin)
+  @Post('retry-failed')
+  @ApiOperation({
+    summary: 'Reset failed screenings to pending and trigger a sweep',
+    description:
+      'Resets all screenings stuck in Failed state (MAX_ATTEMPTS reached) back to ' +
+      'Pending and immediately triggers a sweep. Use after fixing an underlying RPC or gas issue.',
+  })
+  retryFailed() {
+    return this.anchor.retryFailed();
   }
 }
