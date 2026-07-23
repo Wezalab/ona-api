@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Screening, ScreeningSchema } from './schemas/screening.schema';
 import { ScreeningsService } from './screenings.service';
@@ -10,11 +10,11 @@ import { ClinicsModule } from '../clinics/clinics.module';
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Screening.name, schema: ScreeningSchema }]),
-    BlockchainModule,
+    forwardRef(() => BlockchainModule),
     ClinicsModule,
   ],
   providers: [ScreeningsService, AnchorService],
   controllers: [ScreeningsController],
-  exports: [ScreeningsService],
+  exports: [ScreeningsService, AnchorService],
 })
 export class ScreeningsModule {}
