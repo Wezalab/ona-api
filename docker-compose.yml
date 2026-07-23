@@ -2,8 +2,6 @@ services:
   mongo:
     image: mongo:7
     restart: unless-stopped
-    ports:
-      - '27017:27017'
     volumes:
       - mongo-data:/data/db
     healthcheck:
@@ -19,7 +17,7 @@ services:
       mongo:
         condition: service_healthy
     ports:
-      - '3000:3000'
+      - '3847:3000'
     environment:
       NODE_ENV: production
       PORT: 3000
