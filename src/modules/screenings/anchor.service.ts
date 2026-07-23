@@ -54,6 +54,24 @@ export class AnchorService implements OnModuleInit {
     );
   }
 
+  /**
+   * Reset all screenings that reached MAX_ATTEMPTS in Failed state back to
+   * Pending so the next sweep (or a fresh enqueue) can retry them.
+   * Call this after fixing the underlying RPC/gas issue.
+   * Returns the number of screenings re-queued.
+   */
+  async retryFailed(): Promise<{ requeued: number }> {
+    const result = await this.screeningModel.updateMany(
+      { 'blockchain.status': AnchorStatus.Failed },
+      { $set: { 'blockchain.status': AnchorStatus.Pending, 'blockchain.attempts': 0, 'blockchain.error': undefined } },
+    );
+    const requeued = result.modifiedCount;
+    this.logger.log(`retryFailed: reset ${requeued} failed screenings to pending`);
+    // Kick off a sweep immediately so they don't have to wait for the next interval
+    void this.sweep().catch((e) => this.logger.error(`post-retry sweep failed: ${e?.message ?? e}`));
+    return { requeued };
+  }
+
   /** Sweep pending/failed screenings and (re)attempt anchoring. */
   async sweep(): Promise<void> {
     if (!this.starknet.isEnabled()) return;
