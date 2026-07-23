@@ -15,6 +15,6 @@ import { ClinicsModule } from '../clinics/clinics.module';
   ],
   providers: [ScreeningsService, AnchorService],
   controllers: [ScreeningsController],
-  exports: [ScreeningsService],
+  exports: [ScreeningsService, AnchorService],
 })
 export class ScreeningsModule {}
