@@ -202,19 +202,32 @@ export class StarknetService implements OnModuleInit {
    * Manual resource bounds so starknet.js skips fee estimation — public RPC
    * nodes frequently return -32603 when simulating against this contract.
    * Invokes are cheap; these ceilings leave generous headroom.
+   *
+   * Guard: Cartridge Sepolia sometimes returns "0x0" (or omits price_in_fri)
+   * for one or more gas tiers. A zero max_price_per_unit causes the sequencer
+   * to reject the tx with "fee too low" even on testnet.  We apply a per-tier
+   * minimum so the tx is always accepted when the account has sufficient STRK.
    */
   private async buildInvokeBounds() {
     const block: any = await this.provider.getBlockWithTxHashes('latest');
-    const priceFri = (p?: { price_in_fri?: string }): bigint =>
-      p?.price_in_fri ? BigInt(p.price_in_fri) : 0n;
+    const priceFri = (p?: { price_in_fri?: string }, floor = 1n): bigint => {
+      const raw = p?.price_in_fri ? BigInt(p.price_in_fri) : 0n;
+      return raw > 0n ? raw : floor;
+    };
     const BUFFER = 3n;
     return {
-      l1_gas: { max_amount: 0x400n, max_price_per_unit: priceFri(block.l1_gas_price) * BUFFER },
+      l1_gas: {
+        max_amount: 0x400n,
+        max_price_per_unit: priceFri(block.l1_gas_price, 1_000_000n) * BUFFER,
+      },
       l1_data_gas: {
         max_amount: 0x20000n,
-        max_price_per_unit: priceFri(block.l1_data_gas_price) * BUFFER,
+        max_price_per_unit: priceFri(block.l1_data_gas_price, 1_000_000n) * BUFFER,
       },
-      l2_gas: { max_amount: 0x4000000n, max_price_per_unit: priceFri(block.l2_gas_price) * BUFFER },
+      l2_gas: {
+        max_amount: 0x4000000n,
+        max_price_per_unit: priceFri(block.l2_gas_price, 1_000_000_000n) * BUFFER,
+      },
     };
   }
 }
