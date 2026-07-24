@@ -11,6 +11,11 @@
 .env.*
 !.env.example
 
+# Local deploy scripts with SSH credentials (never commit)
+deploy/remote_deploy.py
+deploy/redeploy.py
+deploy/*.local.py
+
 # Logs
 *.log
 logs
